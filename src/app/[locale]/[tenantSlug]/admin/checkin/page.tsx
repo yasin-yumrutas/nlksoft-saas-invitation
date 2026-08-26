@@ -20,19 +20,26 @@ export default function CheckinAdminPage({ params }: { params: Promise<{ locale:
 
   useEffect(() => {
     fetchTenant();
-    
+
+  }, [tenantSlug]);
+
+  useEffect(() => {
+    if (loading || !tenantId) return;
+
+    initializeScanner(tenantId);
+
     return () => {
       if (scannerRef.current) {
         scannerRef.current.clear().catch(console.error);
+        scannerRef.current = null;
       }
     };
-  }, [tenantSlug]);
+  }, [loading, tenantId]);
 
   const fetchTenant = async () => {
     const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', tenantSlug).single();
     if (tenant) {
       setTenantId(tenant.id);
-      initializeScanner(tenant.id);
     }
     setLoading(false);
   };

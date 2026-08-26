@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Invitation SaaS
 
-## Getting Started
+Çok kiracılı dijital davetiye ve etkinlik operasyon platformu. Ürün; davetli deneyimini, RSVP ve koltuk seçimini, misafir yönetimini, medya yüklemeyi ve QR check-in operasyonunu aynı tenant sınırı içinde birleştirir.
 
-First, run the development server:
+**Canlı ürün:** [nlksoft-saas-invitation.vercel.app](https://nlksoft-saas-invitation.vercel.app)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Ürün kapsamı
+
+- Tenant ve dil kodu tabanlı davetiye adresleri (`/{locale}/{tenantSlug}`)
+- Düğün ve kurumsal etkinlik şablonları
+- Kişiselleştirilmiş davet kodu, RSVP ve görsel koltuk seçimi
+- Masa, misafir, mesaj ve katılım yönetimi
+- Kamera tabanlı QR check-in ve tekrar okutma kontrolü
+- Yönetici onaylı misafir fotoğraf/video yükleme akışı
+- Türkçe, İngilizce ve Arapça içerik; RTL desteği
+- React Three Fiber, GSAP ve Framer Motion tabanlı yaratıcı davetiye deneyimi
+
+## Mimari
+
+```text
+Next.js App Router
+  └─ locale sınırı
+      └─ tenant sınırı
+          ├─ herkese açık davetiye ve RSVP
+          ├─ kişiselleştirilmiş davet/QR kartı
+          └─ tenant admin operasyonları
+
+Supabase
+  ├─ Auth ve SSR oturum katmanı
+  ├─ PostgreSQL tenant verisi
+  └─ Storage medya alanı
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+İstemci tarafındaki etkileşimli yüzeyler Next.js Client Components ile, oturum ve tenant çözümleme katmanı ise Supabase SSR istemcileriyle ayrıştırılmıştır. Her operasyon `tenant_id` üzerinden kapsamlanır; üretim ortamında tablo ve Storage politikalarının Row Level Security ile uygulanması gerekir.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Temel route'lar
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Sorumluluk |
+| --- | --- |
+| `/{locale}` | Platform tanıtımı ve örnek davetiye girişi |
+| `/{locale}/{tenantSlug}` | Tenant'a ait genel davetiye deneyimi |
+| `/{locale}/{tenantSlug}/invitation/{id}` | Kişiselleştirilmiş davet, RSVP durumu ve QR giriş kartı |
+| `/{locale}/{tenantSlug}/upload` | Davetli medya yükleme alanı |
+| `/{locale}/{tenantSlug}/admin` | Etkinlik operasyon özeti |
+| `/{locale}/{tenantSlug}/admin/checkin` | QR check-in operatör ekranı |
 
-## Learn More
+## Yerel kurulum
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`.env.local` içinde aşağıdaki public Supabase değerleri tanımlanmalıdır:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
-## Deploy on Vercel
+Şema başlangıç dosyaları `saas_schema.sql` ve `src/lib/supabase/schema.sql` altında bulunur. Gerçek anahtarları veya müşteri verilerini repository'ye eklemeyin.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Kalite kontrolleri
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm test -- --runInBand
+npm run build
+```
+
+Mevcut paket; RSVP doğrulaması, medya seçim davranışı ve tenant kapsamlı QR okuyucu başlangıcını kapsayan 6 Jest/Testing Library testi içerir. Production build ayrıca TypeScript kontrolünden geçer.
+
+## Teknoloji seti
+
+Next.js 16, React 19, TypeScript, Supabase SSR/PostgreSQL/Storage, next-intl, React Three Fiber, GSAP, Framer Motion, Zod, React Hook Form, Jest ve Testing Library.
+
+## Portfolyo notu
+
+Bu repository ürünün teknik kapsamını göstermek için açıktır. Canlı ortamda görünen kişi, davet ve etkinlik bilgileri örnek veriyle sınırlı tutulmalı; gerçek müşteri içerikleri ekran görüntülerinde veya test fixture'larında kullanılmamalıdır.

@@ -1,35 +1,28 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import UploadPage from '@/app/[locale]/upload/page';
+import { fireEvent, render, screen } from '@testing-library/react';
+import UploadPage from '@/app/[locale]/[tenantSlug]/upload/page';
 
 describe('UploadPage', () => {
-  it('renders the upload instructions correctly', () => {
+  it('explains the moderated guest-media flow', () => {
     render(<UploadPage />);
-    
-    expect(screen.getByText('Anı Ekle')).toBeInTheDocument();
-    expect(screen.getByText(/Düğünümüzde çektiğiniz en güzel fotoğrafları/)).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { name: 'Anı Ekle' })).toBeInTheDocument();
+    expect(screen.queryByText(/yönetici onayına gönderildi/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/en güzel fotoğrafları/i)).toBeInTheDocument();
   });
 
-  it('disables the submit button initially', () => {
+  it('enables upload only after a media file is selected', () => {
     render(<UploadPage />);
-    
-    const submitButton = screen.getByRole('button', { name: /Gönder/i });
+    const submitButton = screen.getByRole('button', { name: 'Gönder' });
+
     expect(submitButton).toBeDisabled();
-  });
 
-  it('enables the submit button after selecting a file', async () => {
-    render(<UploadPage />);
-    
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const testFile = new File(['dummy content'], 'test.png', { type: 'image/png' });
-    
-    fireEvent.change(fileInput, { target: { files: [testFile] } });
-    
-    // The button should now be enabled
-    const submitButton = screen.getByRole('button', { name: /Gönder/i });
-    expect(submitButton).not.toBeDisabled();
-    
-    // The filename should be displayed
-    expect(screen.getByText('test.png')).toBeInTheDocument();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['preview'], 'hatira.png', { type: 'image/png' })] },
+    });
+
+    expect(submitButton).toBeEnabled();
+    expect(screen.getByText('hatira.png')).toBeInTheDocument();
   });
 });

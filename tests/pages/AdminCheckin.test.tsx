@@ -1,43 +1,48 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import CheckInPage from '@/app/[locale]/admin/checkin/page';
+import React, { Suspense } from 'react';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import CheckinAdminPage from '@/app/[locale]/[tenantSlug]/admin/checkin/page';
 
-describe('Admin CheckInPage', () => {
-  it('renders the checkin instructions correctly', () => {
-    render(<CheckInPage />);
-    
-    expect(screen.getByText('QR Check-in')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Veya davet kodunu manuel girin...')).toBeInTheDocument();
-  });
+const renderScanner = jest.fn();
+const clearScanner = jest.fn().mockResolvedValue(undefined);
 
-  it('shows error for invalid code', async () => {
-    render(<CheckInPage />);
-    
-    const input = screen.getByPlaceholderText('Veya davet kodunu manuel girin...');
-    const submitButton = screen.getByRole('button', { name: /Doğrula/i });
-    
-    fireEvent.change(input, { target: { value: 'INVALID-CODE' } });
-    fireEvent.click(submitButton);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Davetli bulunamadı veya QR Kod geçersiz.')).toBeInTheDocument();
-      expect(screen.getByText('Hata')).toBeInTheDocument();
+jest.mock('html5-qrcode', () => ({
+  Html5QrcodeScanner: jest.fn().mockImplementation(() => ({
+    render: renderScanner,
+    clear: clearScanner,
+    pause: jest.fn(),
+    resume: jest.fn(),
+  })),
+}));
+
+const query = {
+  select: jest.fn(),
+  eq: jest.fn(),
+  single: jest.fn(),
+};
+query.select.mockReturnValue(query);
+query.eq.mockReturnValue(query);
+query.single.mockResolvedValue({ data: { id: 'tenant-1' }, error: null });
+
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({ from: jest.fn(() => query) }),
+}));
+
+describe('CheckinAdminPage', () => {
+  it('initializes the tenant-scoped QR scanner and shows operator guidance', async () => {
+    const params = Promise.resolve({ locale: 'tr', tenantSlug: 'demo-event' });
+
+    await act(async () => {
+      render(
+        <Suspense fallback={<div>Hazırlanıyor</div>}>
+          <CheckinAdminPage params={params} />
+        </Suspense>,
+      );
     });
-  });
 
-  it('shows success for valid code', async () => {
-    render(<CheckInPage />);
-    
-    const input = screen.getByPlaceholderText('Veya davet kodunu manuel girin...');
-    const submitButton = screen.getByRole('button', { name: /Doğrula/i });
-    
-    // According to mock logic in component, any code with "AHMET" works
-    fireEvent.change(input, { target: { value: 'AHMET-YILMAZ-123' } });
-    fireEvent.click(submitButton);
-    
     await waitFor(() => {
-      expect(screen.getByText('Giriş Başarılı')).toBeInTheDocument();
-      expect(screen.getByText('Ahmet Yılmaz')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'QR Kod Okuyucu' })).toBeInTheDocument();
     });
+    expect(screen.getByText(/mekan girişindeki davetlilerin QR kodlarını/i)).toBeInTheDocument();
+    expect(renderScanner).toHaveBeenCalledTimes(1);
   });
 });
