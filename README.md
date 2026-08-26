@@ -4,6 +4,8 @@
 
 **Canlı ürün:** [nlksoft-saas-invitation.vercel.app](https://nlksoft-saas-invitation.vercel.app)
 
+**Veri bağımsız portfolyo demosu:** [nlksoft-saas-invitation.vercel.app/tr/portfolio-demo](https://nlksoft-saas-invitation.vercel.app/tr/portfolio-demo)
+
 ## Ürün kapsamı
 
 - Tenant ve dil kodu tabanlı davetiye adresleri (`/{locale}/{tenantSlug}`)
